@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>paperd - Local-first reference manager for macOS</title>
+    <meta name="description" content="paperd is a local-first macOS reference manager with full-text semantic search, PDF-to-Markdown conversion, citation graphs, and MCP integration for Claude.">
+    <meta property="og:title" content="paperd">
+    <meta property="og:description" content="A local-first macOS reference manager with semantic full-text search and MCP integration.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://azumaapps.com/paperd/">
+    <meta property="og:image" content="https://azumaapps.com/assets/paperd-icon.png">
+    <link rel="canonical" href="https://azumaapps.com/paperd/">
+    <link rel="icon" href="/assets/paperd-icon.png">
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "paperd",
+        "applicationCategory": "ReferenceApplication",
+        "operatingSystem": "macOS 14 or later",
+        "description": "A local-first macOS reference manager with full-text semantic search, PDF-to-Markdown conversion, citation graphs, and MCP integration.",
+        "url": "https://azumaapps.com/paperd/",
+        "softwareHelp": "https://github.com/paperd-app/paperd",
+        "downloadUrl": "https://github.com/paperd-app/paperd/releases",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Azuma Apps",
+          "url": "https://azumaapps.com/"
+        }
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfbf9;
+        --surface: #ffffff;
+        --surface-2: #f1f4f2;
+        --ink: #121714;
+        --muted: #5b655f;
+        --quiet: #8a948e;
+        --line: #dce2dd;
+        --green: #0a8069;
+        --green-2: #0f5f53;
+        --blue: #1c365d;
+        --amber: #d89c28;
+        --shadow: 0 24px 70px rgb(18 23 20 / 12%);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e1110;
+          --surface: #171c19;
+          --surface-2: #202722;
+          --ink: #f1f4ef;
+          --muted: #adb8b0;
+          --quiet: #7f8a83;
+          --line: #303a34;
+          --green: #65d6bd;
+          --green-2: #9ce5d4;
+          --blue: #8da7d8;
+          --amber: #e8bd63;
+          --shadow: 0 24px 80px rgb(0 0 0 / 34%);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .site-nav {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 18px max(24px, calc((100vw - 1160px) / 2));
+        background: color-mix(in srgb, var(--bg), transparent 12%);
+        border-bottom: 1px solid color-mix(in srgb, var(--line), transparent 42%);
+        backdrop-filter: blur(18px);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .brand img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+      }
+
+      .nav-links a:hover {
+        color: var(--ink);
+      }
+
+      .hero {
+        position: relative;
+        min-height: 92vh;
+        display: grid;
+        align-items: end;
+        overflow: hidden;
+        padding: 128px max(24px, calc((100vw - 1160px) / 2)) 72px;
+        isolation: isolate;
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background:
+          linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg), transparent 2%) 42%, color-mix(in srgb, var(--bg), transparent 38%) 100%),
+          linear-gradient(145deg, color-mix(in srgb, var(--green), transparent 82%), transparent 40%),
+          linear-gradient(26deg, transparent 52%, color-mix(in srgb, var(--blue), transparent 78%) 100%);
+      }
+
+      .product-visual {
+        position: absolute;
+        right: max(18px, calc((100vw - 1220px) / 2));
+        bottom: 66px;
+        width: min(660px, 58vw);
+        aspect-ratio: 1.38;
+        z-index: -1;
+        color: #dce7e3;
+      }
+
+      .app-window {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--line), transparent 20%);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--surface), transparent 5%);
+        box-shadow: var(--shadow);
+      }
+
+      .window-bar {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+
+      .window-grid {
+        display: grid;
+        grid-template-columns: 190px 1fr;
+        min-height: calc(100% - 38px);
+      }
+
+      .sidebar {
+        padding: 18px;
+        border-right: 1px solid var(--line);
+        background: color-mix(in srgb, var(--surface-2), transparent 12%);
+      }
+
+      .library-line {
+        height: 10px;
+        margin-bottom: 13px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--quiet), transparent 58%);
+      }
+
+      .library-line:nth-child(1) {
+        width: 74%;
+      }
+
+      .library-line:nth-child(2) {
+        width: 92%;
+        background: color-mix(in srgb, var(--green), transparent 54%);
+      }
+
+      .library-line:nth-child(3) {
+        width: 68%;
+      }
+
+      .library-line:nth-child(4) {
+        width: 84%;
+      }
+
+      .content {
+        padding: 22px 24px;
+      }
+
+      .search-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 36px;
+        width: min(100%, 420px);
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        background: var(--surface);
+        font-size: 13px;
+      }
+
+      .result {
+        margin-top: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .result-title {
+        width: 68%;
+        height: 14px;
+        border-radius: 999px;
+        background: var(--ink);
+        opacity: 0.88;
+      }
+
+      .result-meta {
+        width: 28%;
+        height: 9px;
+        margin-top: 11px;
+        border-radius: 999px;
+        background: var(--green);
+      }
+
+      .result-copy {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .result-copy span {
+        height: 8px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--muted), transparent 58%);
+      }
+
+      .result-copy span:nth-child(1) {
+        width: 95%;
+      }
+
+      .result-copy span:nth-child(2) {
+        width: 86%;
+      }
+
+      .result-copy span:nth-child(3) {
+        width: 64%;
+      }
+
+      .icon-glow {
+        position: absolute;
+        right: 24px;
+        bottom: 18px;
+        width: 118px;
+        height: 118px;
+        border-radius: 28px;
+        box-shadow: 0 18px 52px rgb(13 128 105 / 22%);
+      }
+
+      .hero-copy {
+        max-width: 660px;
+      }
+
+      .kicker {
+        margin: 0 0 18px;
+        color: var(--green);
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        max-width: 650px;
+        font-size: clamp(52px, 8vw, 104px);
+        line-height: 0.92;
+      }
+
+      .lead {
+        max-width: 590px;
+        margin: 26px 0 0;
+        color: var(--muted);
+        font-size: clamp(19px, 2.3vw, 25px);
+        line-height: 1.45;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 34px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      .button.primary {
+        border-color: var(--green-2);
+        background: var(--green-2);
+        color: #ffffff;
+      }
+
+      .button.secondary {
+        background: color-mix(in srgb, var(--surface), transparent 12%);
+      }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        margin-top: 28px;
+        color: var(--quiet);
+        font-size: 14px;
+      }
+
+      .section {
+        padding: 74px max(24px, calc((100vw - 1060px) / 2));
+        border-top: 1px solid var(--line);
+      }
+
+      .section-header {
+        display: grid;
+        grid-template-columns: minmax(0, 0.86fr) minmax(260px, 0.64fr);
+        gap: 40px;
+        align-items: start;
+        margin-bottom: 38px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(32px, 4.3vw, 56px);
+        line-height: 1;
+      }
+
+      .section-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .feature {
+        min-height: 186px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .feature strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 18px;
+      }
+
+      .feature p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+
+      .step {
+        min-height: 160px;
+        padding: 20px;
+        border-right: 1px solid var(--line);
+      }
+
+      .step:last-child {
+        border-right: 0;
+      }
+
+      .step span {
+        color: var(--green);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .step h3 {
+        margin: 14px 0 10px;
+        font-size: 19px;
+      }
+
+      .step p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .install {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+        gap: 38px;
+        align-items: center;
+      }
+
+      .command {
+        margin: 0;
+        overflow-x: auto;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #101513;
+        color: #e8f5ef;
+        font-size: 15px;
+      }
+
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 34px max(24px, calc((100vw - 1060px) / 2));
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      footer a {
+        text-decoration-color: var(--green);
+        text-underline-offset: 4px;
+      }
+
+      @media (max-width: 880px) {
+        .site-nav {
+          position: absolute;
+        }
+
+        .nav-links a:not(:last-child) {
+          display: none;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 108px;
+        }
+
+        .product-visual {
+          position: relative;
+          right: auto;
+          bottom: auto;
+          width: 100%;
+          margin: 44px 0 0;
+          z-index: 0;
+        }
+
+        .hero-copy {
+          position: relative;
+          z-index: 1;
+        }
+
+        .section-header,
+        .install {
+          grid-template-columns: 1fr;
+        }
+
+        .feature-grid,
+        .workflow {
+          grid-template-columns: 1fr;
+        }
+
+        .step {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .step:last-child {
+          border-bottom: 0;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .hero {
+          padding-bottom: 48px;
+        }
+
+        .window-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          display: none;
+        }
+
+        .icon-glow {
+          width: 86px;
+          height: 86px;
+        }
+
+        .button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <img src="/assets/paperd-icon.png" alt="">
+        <span>paperd</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/paperd-app/paperd">GitHub</a>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">Local-first reference manager for macOS</p>
+          <h1>Search the papers you actually read.</h1>
+          <p class="lead">
+            paperd keeps your research library on your Mac, turns PDFs into searchable Markdown, and connects Claude to your papers through MCP.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/paperd-app/paperd/releases">Download for macOS</a>
+            <a class="button secondary" href="https://github.com/paperd-app/paperd">View source</a>
+          </div>
+          <div class="meta-row">
+            <span>macOS 14+</span>
+            <span>Apple Silicon</span>
+            <span>Local embeddings</span>
+            <span>MCP server included</span>
+          </div>
+        </div>
+
+        <div class="product-visual" aria-hidden="true">
+          <div class="app-window">
+            <div class="window-bar">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <div class="window-grid">
+              <div class="sidebar">
+                <div class="library-line"></div>
+                <div class="library-line"></div>
+                <div class="library-line"></div>
+                <div class="library-line"></div>
+              </div>
+              <div class="content">
+                <div class="search-row">which paper described that method?</div>
+                <div class="result">
+                  <div class="result-title"></div>
+                  <div class="result-meta"></div>
+                  <div class="result-copy">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+                <div class="result">
+                  <div class="result-title"></div>
+                  <div class="result-meta"></div>
+                  <div class="result-copy">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <img class="icon-glow" src="/assets/paperd-icon.png" alt="">
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <div class="section-header">
+          <h2>A library built for finding, citing, and revisiting.</h2>
+          <p class="section-copy">
+            paperd combines full-text semantic search, bibliographic metadata, citation context, and AI access without making your papers leave your machine.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature">
+            <strong>Hybrid semantic search</strong>
+            <p>Search full paper text with local embeddings and keyword matching, then rank results with reciprocal rank fusion.</p>
+          </article>
+          <article class="feature">
+            <strong>PDF to Markdown</strong>
+            <p>Convert PDFs into AI-friendly Markdown while keeping original files and rebuildable metadata as the source of truth.</p>
+          </article>
+          <article class="feature">
+            <strong>Claude-ready MCP</strong>
+            <p>Let AI clients search, cite, and read your library through a bundled MCP server that works outside the app.</p>
+          </article>
+          <article class="feature">
+            <strong>Citation graph</strong>
+            <p>Explore references and citations around each paper to recover context and follow related work.</p>
+          </article>
+          <article class="feature">
+            <strong>BibTeX and metadata</strong>
+            <p>Resolve papers through arXiv, Crossref, Semantic Scholar, and OpenAlex, then copy clean BibTeX when you write.</p>
+          </article>
+          <article class="feature">
+            <strong>Private by default</strong>
+            <p>Embeddings and PDF parsing run locally. Network access is limited to metadata and paper retrieval you initiate.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>From paper to answer.</h2>
+          <p class="section-copy">
+            The workflow is designed around the repeated loop of adding a paper, finding the right passage later, and turning that evidence into citations.
+          </p>
+        </div>
+
+        <div class="workflow">
+          <article class="step">
+            <span>01</span>
+            <h3>Add</h3>
+            <p>Import by DOI, arXiv ID, URL, or a local PDF.</p>
+          </article>
+          <article class="step">
+            <span>02</span>
+            <h3>Index</h3>
+            <p>Convert, chunk, embed, and index the full text locally.</p>
+          </article>
+          <article class="step">
+            <span>03</span>
+            <h3>Search</h3>
+            <p>Ask in natural language and jump into the matching section.</p>
+          </article>
+          <article class="step">
+            <span>04</span>
+            <h3>Cite</h3>
+            <p>Use BibTeX, notes, citation graph context, or MCP tools.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="install" class="section">
+        <div class="install">
+          <div>
+            <h2>Install paperd.</h2>
+            <p class="section-copy">
+              paperd is built for macOS 14 or later on Apple Silicon. The local AI models are downloaded during first setup.
+            </p>
+          </div>
+          <pre class="command"><code>brew install --cask paperd-app/paperd/paperd</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Made by <a href="/">Azuma Apps</a></span>
+      <span><a href="https://github.com/paperd-app/paperd">GitHub</a> · <a href="https://github.com/paperd-app/paperd/releases">Releases</a> · <a href="mailto:contact@azumaapps.com">Contact</a></span>
+    </footer>
+  </body>
+</html>

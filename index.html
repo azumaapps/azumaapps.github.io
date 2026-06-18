@@ -92,10 +92,12 @@
       }
 
       .project {
+        display: block;
         padding: 20px;
         border: 1px solid var(--line);
         border-radius: 8px;
         background: color-mix(in srgb, var(--bg), var(--text) 3%);
+        text-decoration: none;
       }
 
       .project h3 {
@@ -138,10 +140,10 @@
       <section aria-labelledby="projects-title">
         <h2 id="projects-title">Projects</h2>
         <div class="projects">
-          <article class="project">
+          <a class="project" href="/paperd/">
             <h3>paperd</h3>
             <p>A local-first macOS reference manager with semantic full-text search and MCP integration.</p>
-          </article>
+          </a>
           <article class="project">
             <h3>TohanApp</h3>
             <p>A focused app from Azuma Apps. Details will be published here as the product page takes shape.</p>
